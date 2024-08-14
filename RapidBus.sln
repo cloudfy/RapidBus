@@ -1,0 +1,54 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RapidBus.Abstractions", "RapidBus.Abstractions\RapidBus.Abstractions.csproj", "{CCC307A6-6E32-4134-BE20-DD79DC6E4779}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RapidBus.RabbitMQ", "RapidBus.RabbitMQ\RapidBus.RabbitMQ.csproj", "{F1B1C750-B3B8-4281-8876-280438AFDF35}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RapidBus.AzureStorageQueues", "RapidBus.AzureStorageQueues\RapidBus.AzureStorageQueues.csproj", "{0080AF79-621D-4881-B8A6-83292268C494}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RapidBus", "RapidBus\RapidBus.csproj", "{D34A900E-C217-4BA8-9505-2C4878FBA052}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C0346105-EB83-4420-AD51-6E7A0684205E}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RapidBus.Sample", "samples\RapidBus.Sample\RapidBus.Sample.csproj", "{2E12E42B-3242-450B-A947-3BC3DE779F7D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CCC307A6-6E32-4134-BE20-DD79DC6E4779}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CCC307A6-6E32-4134-BE20-DD79DC6E4779}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CCC307A6-6E32-4134-BE20-DD79DC6E4779}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CCC307A6-6E32-4134-BE20-DD79DC6E4779}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1B1C750-B3B8-4281-8876-280438AFDF35}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1B1C750-B3B8-4281-8876-280438AFDF35}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1B1C750-B3B8-4281-8876-280438AFDF35}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1B1C750-B3B8-4281-8876-280438AFDF35}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0080AF79-621D-4881-B8A6-83292268C494}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0080AF79-621D-4881-B8A6-83292268C494}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0080AF79-621D-4881-B8A6-83292268C494}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0080AF79-621D-4881-B8A6-83292268C494}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D34A900E-C217-4BA8-9505-2C4878FBA052}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D34A900E-C217-4BA8-9505-2C4878FBA052}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D34A900E-C217-4BA8-9505-2C4878FBA052}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D34A900E-C217-4BA8-9505-2C4878FBA052}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E12E42B-3242-450B-A947-3BC3DE779F7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E12E42B-3242-450B-A947-3BC3DE779F7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E12E42B-3242-450B-A947-3BC3DE779F7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E12E42B-3242-450B-A947-3BC3DE779F7D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A19C9427-9C35-403D-9E16-4CB70603EE83}
+	EndGlobalSection
+EndGlobal
