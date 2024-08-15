@@ -13,10 +13,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RapidBus", "RapidBus\RapidB
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C0346105-EB83-4420-AD51-6E7A0684205E}"
 	ProjectSection(SolutionItems) = preProject
+		CONTRIBUTING.md = CONTRIBUTING.md
 		Directory.Build.props = Directory.Build.props
+		LICENSE = LICENSE
+		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RapidBus.Sample", "samples\RapidBus.Sample\RapidBus.Sample.csproj", "{2E12E42B-3242-450B-A947-3BC3DE779F7D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RapidBus.Sample", "samples\RapidBus.Sample\RapidBus.Sample.csproj", "{2E12E42B-3242-450B-A947-3BC3DE779F7D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

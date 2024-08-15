@@ -4,7 +4,3 @@ public class RapidBusOptions
 {
 
 }
-public class RapidBusBuilder
-{
-
-}
