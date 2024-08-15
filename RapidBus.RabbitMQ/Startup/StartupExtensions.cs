@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
+using RapidBus.Consumer;
+using RapidBus.Subscriptions;
 
 namespace RapidBus.RabbitMQ;
 
@@ -13,7 +15,8 @@ public static class StartupExtensions
         , string queueName
         , int timeoutBeforeReconnecting = 15)
     {
-        builder.SetFactory((sp, isvm) => {
+        // assign the factory of the transport
+        builder.SetFactory((sp) => {
             var connectionFactory = new ConnectionFactory
             {
                 Uri = new Uri(connectionString)
@@ -21,26 +24,23 @@ public static class StartupExtensions
             };
 
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+            var consumer = sp.GetRequiredService<IConsumerApplication>();
+            var subMgr = sp.GetRequiredService<ISubscriptionManager>();
 
             var persistentConnection = new RabbitMQPersistentConnection(
                 connectionFactory
                 , timeoutBeforeReconnecting
                 , loggerFactory.CreateLogger<RabbitMQPersistentConnection>());
 
-            return new RabbitMqRapidBus(
-                persistentConnection
-                , isvm
-                , loggerFactory.CreateLogger<RabbitMqRapidBus>()
-                , sp
+            return new RabbitMQRapidBus(
+                consumer
+                , persistentConnection
+                , subMgr
+                , loggerFactory.CreateLogger<RabbitMQRapidBus>()
                 , exchangeName
                 , queueName);
         });
-       
-        //options.AddIntegrationEventBus<RabbitMQIntegrationEventBus>();
-        //options.Services.Configure<RabbitMQOptions>(options =>
-        //{
-        //    options.ConnectionString = connectionString;
-        //});
+
         return builder;
     }
 }

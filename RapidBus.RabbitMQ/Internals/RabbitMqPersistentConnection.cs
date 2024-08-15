@@ -3,6 +3,7 @@ using Polly;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
+using RapidBus.Abstractions;
 using System.Net.Sockets;
 
 namespace RapidBus.RabbitMQ;

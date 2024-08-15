@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
 
-namespace RapidBus;
+namespace RapidBus.Abstractions;
 
 /// <summary>
 /// Represents a persistent connection..

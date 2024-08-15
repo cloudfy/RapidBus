@@ -1,22 +1,24 @@
 ﻿using RabidBus.Abstractions;
-using RapidBus.Abstractions;
+using System;
 
-namespace RapidBus;
+namespace RapidBus.Subscriptions;
 
-internal sealed class InMemoryEventBusSubscriptionManager
-    : IEventBusSubscriptionManager
+internal sealed class InMemorySubscriptionManager
+    : ISubscriptionManager
 {
     private readonly Dictionary<string, Type> _eventTypes = [];
     private readonly Dictionary<string, List<Subscription>> _handlers = [];
 
     public event EventHandler<string>? OnEventRemoved;
 
-    public string GetEventIdentifier<TEvent>()
+    public string GetEventIdentifier<TEvent>() => GetEventIdentifier(typeof(TEvent));
+    
+    private static string GetEventIdentifier(Type eventType)
     {
-        return typeof(TEvent).GetCustomAttributes(typeof(IntegrationEventAttribute), false)
+        return eventType.GetCustomAttributes(typeof(IntegrationEventAttribute), false)
             .SingleOrDefault() is IntegrationEventAttribute attribute
             ? attribute.Name
-            : typeof(TEvent).Name;
+            : eventType.Name;
     }
 
     public Type? GetEventTypeByName(string eventName) => _eventTypes[eventName];
@@ -32,13 +34,24 @@ internal sealed class InMemoryEventBusSubscriptionManager
         where TEvent : IIntegrationEvent
         where TEventHandler : IIntegrationEventHandler<TEvent>
     {
-        var eventName = GetEventIdentifier<TEvent>();
+        AddSubscription(typeof(TEvent), typeof(TEventHandler));
+        //var eventName = GetEventIdentifier<TEvent>();
 
-        DoAddSubscription(typeof(TEvent), typeof(TEventHandler), eventName);
+        //DoAddSubscription(typeof(TEvent), typeof(TEventHandler), eventName);
 
+        //if (!_eventTypes.ContainsKey(eventName))
+        //{
+        //    _eventTypes.Add(eventName, typeof(TEvent));
+        //}
+    }
+    public void AddSubscription(Type eventType, Type eventHandlerType)
+    {
+        var eventName = GetEventIdentifier(eventType);
+
+        DoAddSubscription(eventType, eventHandlerType, eventName);
         if (!_eventTypes.ContainsKey(eventName))
         {
-            _eventTypes.Add(eventName, typeof(TEvent));
+            _eventTypes.Add(eventName, eventType);
         }
     }
 

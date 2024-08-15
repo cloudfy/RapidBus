@@ -10,16 +10,17 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using RapidBus.Middleware;
-using RapidBus.Abstractions;
+using RapidBus.Subscriptions;
+using RapidBus.Consumer;
 
 namespace RapidBus.RabbitMQ;
 
-internal sealed class RabbitMqRapidBus : IRapidBus
+internal sealed class RabbitMQRapidBus : IRapidBus
 {
     private readonly RabbitMQPersistentConnection _persistentConnection;
-    private readonly IEventBusSubscriptionManager _subscriptionsManager;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<RabbitMqRapidBus> _logger;
+    private readonly ISubscriptionManager _subscriptionsManager;
+    private readonly IConsumerApplication _consumerApplication;
+    private readonly ILogger<RabbitMQRapidBus> _logger;
     
     private readonly string _exchangeName;
     private readonly string _queueName;
@@ -33,17 +34,17 @@ internal sealed class RabbitMqRapidBus : IRapidBus
 
     public event EventHandler<BeginHandleEventEventArgs>? BeginHandleEvent;
 
-    internal RabbitMqRapidBus(
-        RabbitMQPersistentConnection persistentConnection
-        , IEventBusSubscriptionManager subscriptionsManager
-        , ILogger<RabbitMqRapidBus> logger
-        , IServiceProvider serviceProvider
+    internal RabbitMQRapidBus(
+        IConsumerApplication consumerApplication
+        , RabbitMQPersistentConnection persistentConnection
+        , ISubscriptionManager subscriptionsManager
+        , ILogger<RabbitMQRapidBus> logger
         , string exchangeName
         , string queueName)
     {
         _persistentConnection = persistentConnection ?? throw new ArgumentNullException(nameof(persistentConnection));
         _subscriptionsManager = subscriptionsManager ?? throw new ArgumentNullException(nameof(subscriptionsManager));
-        _serviceProvider = serviceProvider;
+        _consumerApplication = consumerApplication;
         _logger = logger;
         _exchangeName = exchangeName ?? throw new ArgumentNullException(nameof(exchangeName));
         _queueName = queueName ?? throw new ArgumentNullException(nameof(queueName));
@@ -257,7 +258,8 @@ internal sealed class RabbitMqRapidBus : IRapidBus
 
         try
         {
-            await ProcessEvent(eventName, message, _cancellationTokenSource?.Token ?? default);
+            await _consumerApplication.ProcessEvent(
+                eventName, message, _cancellationTokenSource?.Token ?? default);
 
             _consumerChannel.BasicAck(eventArgs.DeliveryTag, multiple: false);
             isAcknowledged = true;
@@ -292,64 +294,66 @@ internal sealed class RabbitMqRapidBus : IRapidBus
         }
     }
 
-    private Task ProcessEvent(string eventName, string message, CancellationToken cancellationToken)
-    {
-        _logger.LogTrace("Processing RabbitMQ event: {EventName}...", eventName);
+    //// TODO: Move to Core. This is the main event processing logic.
+    //// event wire up might be required.
+    //private Task ProcessEvent(string eventName, string message, CancellationToken cancellationToken)
+    //{
+    //    _logger.LogTrace("Processing RabbitMQ event: {EventName}...", eventName);
 
-        if (!_subscriptionsManager.HasSubscriptionsForEvent(eventName))
-        {
-            _logger.LogTrace("There are no subscriptions for this event.");
-            return Task.CompletedTask;
-        }
+    //    if (!_subscriptionsManager.HasSubscriptionsForEvent(eventName))
+    //    {
+    //        _logger.LogTrace("There are no subscriptions for this event.");
+    //        return Task.CompletedTask;
+    //    }
 
-        var subscriptions = _subscriptionsManager.GetHandlersForEvent(eventName);
-        if (subscriptions.Any() == false)
-        {
-            _logger.LogWarning("There are no handlers for the following event: {EventName}", eventName);
-            return Task.CompletedTask;
-        }
+    //    var subscriptions = _subscriptionsManager.GetHandlersForEvent(eventName);
+    //    if (subscriptions.Any() == false)
+    //    {
+    //        _logger.LogWarning("There are no handlers for the following event: {EventName}", eventName);
+    //        return Task.CompletedTask;
+    //    }
 
-        foreach (var subscription in subscriptions)
-        {
-            var eventType = _subscriptionsManager.GetEventTypeByName(eventName);
-            if (eventType is null)
-            {
-                _logger.LogWarning("There are no handlers for the following event: {EventName}", eventName);
-                continue;
-            }
-            var @event = JsonSerializer.Deserialize(message, eventType) as IIntegrationEvent;
-            //var @event = (IIntegrationEvent)JsonSerializer.Deserialize(message, eventType);
-            var eventHandlerType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
+    //    foreach (var subscription in subscriptions)
+    //    {
+    //        var eventType = _subscriptionsManager.GetEventTypeByName(eventName);
+    //        if (eventType is null)
+    //        {
+    //            _logger.LogWarning("There are no handlers for the following event: {EventName}", eventName);
+    //            continue;
+    //        }
+    //        var @event = JsonSerializer.Deserialize(message, eventType) as IIntegrationEvent;
+    //        //var @event = (IIntegrationEvent)JsonSerializer.Deserialize(message, eventType);
+    //        var eventHandlerType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
 
-            ThreadPool.QueueUserWorkItem(async state => {
-                await _concurrencyLimit.WaitAsync((CancellationToken)state!);
+    //        ThreadPool.QueueUserWorkItem(async state => {
+    //            await _concurrencyLimit.WaitAsync((CancellationToken)state!);
 
-                _logger.LogTrace($"Processing event {eventName} on thread {Environment.CurrentManagedThreadId}...");
+    //            _logger.LogTrace($"Processing event {eventName} on thread {Environment.CurrentManagedThreadId}...");
 
-                using (var scope = _serviceProvider.CreateScope())
-                {
-                    // build event middleware pipeline (UseMiddleware) and execute the main handler
-                    var del = UseEventMiddlewareExtensions.BuildByRequestDelegate(
-                        async () => {
-                            var handler = scope.ServiceProvider.GetService(subscription.HandlerType);
-                            if (handler == null)
-                            {
-                                _logger.LogWarning("There are no handlers for the following event: {EventName}", eventName);
-                                return;
-                            }
-                            await (Task)eventHandlerType.GetMethod(nameof(IIntegrationEventHandler<IIntegrationEvent>.Handle))!.Invoke(handler, [@event!, state!])!;
-                        });
-                    // begin pipeline
-                    await del(new EventContext(@event!, eventName, scope.ServiceProvider));
-                }
-                _concurrencyLimit.Release();
+    //            using (var scope = _serviceProvider.CreateScope())
+    //            {
+    //                // build event middleware pipeline (UseMiddleware) and execute the main handler
+    //                var del = UseEventMiddlewareExtensions.BuildByRequestDelegate(
+    //                    async () => {
+    //                        var handler = scope.ServiceProvider.GetService(subscription.HandlerType);
+    //                        if (handler == null)
+    //                        {
+    //                            _logger.LogWarning("There are no handlers for the following event: {EventName}", eventName);
+    //                            return;
+    //                        }
+    //                        await (Task)eventHandlerType.GetMethod(nameof(IIntegrationEventHandler<IIntegrationEvent>.Handle))!.Invoke(handler, [@event!, state!])!;
+    //                    });
+    //                // begin pipeline
+    //                await del(new EventContext(@event!, eventName, scope.ServiceProvider));
+    //            }
+    //            _concurrencyLimit.Release();
 
-            }, cancellationToken);
-        }
+    //        }, cancellationToken);
+    //    }
 
-        _logger.LogTrace("Processed event {EventName}.", eventName);
-        return Task.CompletedTask;
-    }
+    //    _logger.LogTrace("Processed event {EventName}.", eventName);
+    //    return Task.CompletedTask;
+    //}
 
     private void SubscriptionManager_OnEventRemoved(object? sender, string eventName)
     {

@@ -1,19 +1,38 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-
 using RapidBus;
+using RapidBus.AzureStorageQueues;
 using RapidBus.Middleware;
-using RapidBus.RabbitMQ;
 using RapidBus.Sample.Event;
 using RapidBus.Sample.Middleware;
 
 var builder = Host.CreateApplicationBuilder();
 
-builder.Services.AddRapidBus(builder => {
-    builder
-        .UseRabbitMQ("amqp://guest:guest@localhost:5672", "exchange", "queue") // use rabbitmq
-        .RegisterEventHandlers(typeof(Program).Assembly); // auto register (event processing)
-});
+if (false) // produce only 
+{
+    builder.Services.AddRapidBus(busBuilder =>
+    {
+        //busBuilder
+        //    .UseRabbitMQ(builder.Configuration.GetConnectionString("RabbitMQ")!, "exchange", "queue"); // use rabbitmq
+
+        busBuilder
+            .UseAzureStorageQueues(builder.Configuration.GetConnectionString("AzureStorage")!);
+    });
+}
+if (true) // produce and consume
+{
+    builder.Services.AddRapidBus((busBuilder, consumer) =>
+    {
+        //busBuilder
+        //    .UseRabbitMQ(builder.Configuration.GetConnectionString("RabbitMQ")!, "exchange", "queue"); // use rabbitmq
+        busBuilder
+            .UseAzureStorageQueues(builder.Configuration.GetConnectionString("AzureStorage")!);
+        consumer
+            .RegisterEventHandlers(typeof(Program).Assembly) // auto register (event processing)
+            .SubscribeEventHandlers();
+    });
+}
 
 var host = builder.Build();
 
@@ -23,7 +42,7 @@ host.UseEventMiddleware<SampleMiddleware>();
 host.Start();
 //await host.RunAsync();
 
-// sample
+// sample publish
 
 var bus = host.Services.GetRequiredService<IRapidBus>();
 

@@ -1,8 +1,8 @@
 ﻿using RabidBus.Abstractions;
 
-namespace RapidBus.Abstractions;
+namespace RapidBus.Subscriptions;
 
-public interface IEventBusSubscriptionManager
+public interface ISubscriptionManager
 {
     event EventHandler<string> OnEventRemoved;
 
@@ -16,6 +16,8 @@ public interface IEventBusSubscriptionManager
     void AddSubscription<TEvent, TEventHandler>()
         where TEvent : IIntegrationEvent
         where TEventHandler : IIntegrationEventHandler<TEvent>;
+    
+    void AddSubscription(Type @eventType, Type eventHandlerType);
 
     void RemoveSubscription<TEvent, TEventHandler>()
         where TEvent : IIntegrationEvent
