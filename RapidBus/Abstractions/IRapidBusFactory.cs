@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RapidBus;
+namespace RapidBus.Abstractions;
 
-public interface IEventBus
+public interface IRapidBusFactory
 {
+    IRapidBus Create(IServiceProvider serviceProvider);
 }
