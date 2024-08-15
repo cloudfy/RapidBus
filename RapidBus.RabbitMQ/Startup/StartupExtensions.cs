@@ -6,17 +6,19 @@ namespace RapidBus.RabbitMQ;
 
 public static class StartupExtensions
 {
-    public static RapidBusOptionsBuilder UseRabbitMQ(
-        this RapidBusOptionsBuilder builder
+    public static RapidBusBuilder UseRabbitMQ(
+        this RapidBusBuilder builder
         , string connectionString
+        , string exchangeName
+        , string queueName
         , int timeoutBeforeReconnecting = 15)
     {
-        var connectionFactory = new ConnectionFactory { 
-            Uri = new Uri(connectionString) 
-            , DispatchConsumersAsync = true
-        };
-
-        builder.Services.AddSingleton<IEventBus>((sp) => {
+        builder.SetFactory((sp, isvm) => {
+            var connectionFactory = new ConnectionFactory
+            {
+                Uri = new Uri(connectionString)
+                , DispatchConsumersAsync = true
+            };
 
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
 
@@ -27,9 +29,13 @@ public static class StartupExtensions
 
             return new RabbitMqRapidBus(
                 persistentConnection
-                , loggerFactory.CreateLogger<RabbitMqRapidBus>());
+                , isvm
+                , loggerFactory.CreateLogger<RabbitMqRapidBus>()
+                , sp
+                , exchangeName
+                , queueName);
         });
-
+       
         //options.AddIntegrationEventBus<RabbitMQIntegrationEventBus>();
         //options.Services.Configure<RabbitMQOptions>(options =>
         //{

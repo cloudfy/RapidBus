@@ -18,7 +18,7 @@ public sealed class EventContext(
     /// <summary>
     /// Gets the <see cref="IServiceProvider"/> for this context.
     /// </summary>
-    public IServiceProvider RequestServices { get; } = serviceProvider;
+    public IServiceProvider ServiceProvider { get; set; } = serviceProvider;
     /// <summary>
     /// Gets a key/value collection that can be used to share data within the scope of this event.
     /// </summary>

@@ -1,6 +1,6 @@
 ﻿using RabidBus.Abstractions;
 
-namespace RapidBus;
+namespace RapidBus.Abstractions;
 
 public interface IEventBusSubscriptionManager
 {

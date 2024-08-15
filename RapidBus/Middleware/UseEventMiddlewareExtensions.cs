@@ -1,11 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using RabidBus.Abstractions;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace RapidBus;
+namespace RapidBus.Middleware;
 
 public static class UseEventMiddlewareExtensions
 {
@@ -15,15 +16,15 @@ public static class UseEventMiddlewareExtensions
     private readonly static MethodInfo _getServiceInfo
         = typeof(UseEventMiddlewareExtensions).GetMethod(nameof(GetService), BindingFlags.NonPublic | BindingFlags.Static)!;
 
-    public static RapidBusOptionsBuilder UseMiddleware<TMiddleware>(
-        this RapidBusOptionsBuilder app
+    public static IHost UseEventMiddleware<TMiddleware>(
+        this IHost app
         , params object?[] args)
     {
         return app.UseMiddleware(typeof(TMiddleware), args);
     }
 
-    private static RapidBusOptionsBuilder UseMiddleware(
-        this RapidBusOptionsBuilder app
+    private static IHost UseMiddleware(
+        this IHost app
         , Type middleware
         , params object?[] args)
     {
@@ -60,8 +61,8 @@ public static class UseEventMiddlewareExtensions
         return app.Use(reflectionBinder.CreateMiddleware);
     }
 
-    internal static RapidBusOptionsBuilder Use(
-        this RapidBusOptionsBuilder app
+    internal static IHost Use(
+        this IHost app
         , Func<RequestDelegate, RequestDelegate> middleware)
     {
         _components.Add(middleware);
@@ -89,7 +90,8 @@ public static class UseEventMiddlewareExtensions
     /// <returns></returns>
     public static RequestDelegate BuildByRequestDelegate(Func<Task> innerEventDelegate)
     {
-        RequestDelegate app = context => {
+        RequestDelegate app = context =>
+        {
             return innerEventDelegate();
         };
 
@@ -103,14 +105,14 @@ public static class UseEventMiddlewareExtensions
 
     private sealed class ReflectionMiddlewareBinder
     {
-        private readonly RapidBusOptionsBuilder _app;
+        private readonly IHost _app;
         private readonly Type _middleware;
         private readonly object?[] _args;
         private readonly MethodInfo _invokeMethod;
         private readonly ParameterInfo[] _parameters;
 
         public ReflectionMiddlewareBinder(
-            RapidBusOptionsBuilder app,
+            IHost app,
             Type middleware,
             object?[] args,
             MethodInfo invokeMethod,
@@ -137,12 +139,13 @@ public static class UseEventMiddlewareExtensions
 
             // Performance optimization: Use compiled expressions to invoke middleware with services injected in Invoke.
             // If IsDynamicCodeCompiled is false then use standard reflection to avoid overhead of interpreting expressions.
-            var factory = System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled
+            var factory = RuntimeFeature.IsDynamicCodeCompiled
                 ? CompileExpression<object>(_invokeMethod, _parameters)
                 : ReflectionFallback<object>(_invokeMethod, _parameters);
 
-            return context => {
-                var serviceProvider = context.RequestServices ?? _app.Services;
+            return context =>
+            {
+                var serviceProvider = context.ServiceProvider ?? _app.Services;
                 if (serviceProvider == null)
                 {
                     throw new InvalidOperationException();
@@ -168,7 +171,8 @@ public static class UseEventMiddlewareExtensions
             }
         }
 
-        return (middleware, context, serviceProvider) => {
+        return (middleware, context, serviceProvider) =>
+        {
             var methodArguments = new object[parameters.Length];
             methodArguments[0] = context;
             for (var i = 1; i < parameters.Length; i++)

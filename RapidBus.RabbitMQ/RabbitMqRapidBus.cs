@@ -5,17 +5,16 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 using RabidBus.Abstractions;
-using System.Diagnostics;
 using System.Net.Sockets;
 using System.Reflection;
-using System;
 using System.Text;
 using System.Text.Json;
-using System.Threading;
+using RapidBus.Middleware;
+using RapidBus.Abstractions;
 
 namespace RapidBus.RabbitMQ;
 
-internal class RabbitMqRapidBus : IEventBus
+internal sealed class RabbitMqRapidBus : IRapidBus
 {
     private readonly RabbitMQPersistentConnection _persistentConnection;
     private readonly IEventBusSubscriptionManager _subscriptionsManager;
@@ -38,14 +37,16 @@ internal class RabbitMqRapidBus : IEventBus
         RabbitMQPersistentConnection persistentConnection
         , IEventBusSubscriptionManager subscriptionsManager
         , ILogger<RabbitMqRapidBus> logger
-        , IServiceProvider serviceProvider)
+        , IServiceProvider serviceProvider
+        , string exchangeName
+        , string queueName)
     {
         _persistentConnection = persistentConnection ?? throw new ArgumentNullException(nameof(persistentConnection));
         _subscriptionsManager = subscriptionsManager ?? throw new ArgumentNullException(nameof(subscriptionsManager));
         _serviceProvider = serviceProvider;
         _logger = logger;
-        //_exchangeName = brokerName ?? throw new ArgumentNullException(nameof(brokerName));
-        //_queueName = queueName ?? throw new ArgumentNullException(nameof(queueName));
+        _exchangeName = exchangeName ?? throw new ArgumentNullException(nameof(exchangeName));
+        _queueName = queueName ?? throw new ArgumentNullException(nameof(queueName));
 
         ConfigureMessageBroker();
     }
@@ -75,34 +76,33 @@ internal class RabbitMqRapidBus : IEventBus
 
         //_logger.LogTrace("Creating RabbitMQ channel to publish event #{EventId} ({EventName})...", @event.Id, eventName);
 
-        using (var channel = _persistentConnection.CreateModel())
+        using var channel = _persistentConnection.CreateModel();
+        //          using var activity = ActivitySource.StartActivity("PUBLISH " + eventName, ActivityKind.Producer);
+
+        channel.ExchangeDeclare(exchange: _exchangeName, type: ExchangeType.Direct, durable: true, autoDelete: false);
+
+        var message = JsonSerializer.Serialize(@event);
+        var body = Encoding.UTF8.GetBytes(message);
+
+        policy.Execute(() =>
         {
-  //          using var activity = ActivitySource.StartActivity("PUBLISH " + eventName, ActivityKind.Producer);
+            var properties = channel.CreateBasicProperties();
+            properties.DeliveryMode = (byte)DeliveryMode.Persistent;
+            properties.AppId = "";
 
-            channel.ExchangeDeclare(exchange: _exchangeName, type: "direct", durable: false);
+            //                _logger.LogTrace($"Publishing event {@eventName} to RabbitMQ with ID #{@event.Id}");
 
-            var message = JsonSerializer.Serialize(@event);
-            var body = Encoding.UTF8.GetBytes(message);
+            //                AddActivityToHeader(activity!, properties, eventName);
 
-            policy.Execute(() => {
-                var properties = channel.CreateBasicProperties();
-                properties.DeliveryMode = (byte)DeliveryMode.Persistent;
-                properties.AppId = "Plude";
-
-//                _logger.LogTrace($"Publishing event {@eventName} to RabbitMQ with ID #{@event.Id}");
-
-//                AddActivityToHeader(activity!, properties, eventName);
-
-                channel.BasicPublish(
-                    exchange: _exchangeName,
-                    routingKey: eventName,
-                    mandatory: true,
-                    basicProperties: properties,
+            channel.BasicPublish(
+                exchange: _exchangeName,
+                routingKey: eventName,
+                mandatory: true,
+                basicProperties: properties,
                 body: body);
 
-//                _logger.LogTrace("Published event with ID #{EventId}.", @event.Id);
-            });
-        }
+            //                _logger.LogTrace("Published event with ID #{EventId}.", @event.Id);
+        });
     }
 
     public void Subscribe<TEvent, TEventHandler>()

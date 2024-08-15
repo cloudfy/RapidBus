@@ -9,6 +9,7 @@ namespace RapidBus.Sample.Event;
 
 public class SampleEvent : IIntegrationEvent
 {
+    public string Messagge = "Hello, World!";
 }
 public class SampleEventHandler : IIntegrationEventHandler<SampleEvent>
 {
